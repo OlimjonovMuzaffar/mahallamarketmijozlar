@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAHALLA MARKET — Supermarket</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        blueCore: {
+                            deep: '#030B1E',
+                            card: '#081530',
+                            primary: '#0047FF',
+                            hover: '#0035CC',
+                            light: '#38BDF8',
+                            border: '#1E2E4E'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #030B1E; color: #F8FAFC; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .korzinka-card {
+            background-color: #FFFFFF;
+            border-radius: 28px;
+            transition: all 0.25s ease;
+        }
+        .korzinka-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 36px rgba(0, 71, 255, 0.3);
+        }
+        .yellow-price-badge {
+            background-color: #FFE600;
+            color: #0F172A;
+            box-shadow: 0 4px 12px rgba(255, 230, 0, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCWozMUVt_t10aIfPFawhcz-YxZhSFV_Co",
+            authDomain: "mahallamarket-ff3fa.firebaseapp.com",
+            databaseURL: "https://mahallamarket-ff3fa-default-rtdb.firebaseio.com",
+            projectId: "mahallamarket-ff3fa",
+            storageBucket: "mahallamarket-ff3fa.firebasestorage.app",
+            messagingSenderId: "434195430445",
+            appId: "1:434195430445:web:08361e1e2b996df18dcca4"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.database();
+
+        // 100% ISHONCHLI, TOZA FONLI SUPERMARKET RASMLAR BAZASI
+        const getReliableImage = (nom, kat) => {
+            const name = (nom || "").toLowerCase();
+            
+            // Sabzavotlar & Mevalar
+            if (name.includes("pomidor")) return "https://images.pexels.com/photos/1327838/pexels-photo-1327838.jpeg?auto=compress&cs=tinysrgb&w=350";
+            if (name.includes("kartoshka")) return "https://images.pexels.com/photos/2286776/pexels-photo-2286776.jpeg?auto=compress&cs=tinysrgb&w=350";
+            if (name.includes("bodring")) return "https://images.pexels.com/photos/2329440/pexels-photo-2329440.jpeg?auto=compress&cs=tinysrgb&w=350";
+            if (name.includes("piyoz")) return "https://images.pexels.com/photos/144206/pexels-photo-144206.jpeg?auto=compress&cs=tinysrgb&w=350";
+            if (name.includes("shaftoli")) return "https://images.pexels.com/photos/6157049/pexels-photo-6157049.jpeg?auto=compress&cs=tinysrgb&w=350";
+            if (name.includes("uzum")) return "https://images.pexels.com/photos/708777/pexels-photo-708777.jpeg?auto=compress&cs=tinysrgb&w=350";
+            if (name.includes("olma")) return "https://images.pexels.com/photos/102104/pexels-photo-102104.jpeg?auto=compress&cs=tinysrgb&w=350";
+
+            // Non & Pishiriqlar
+            if (name.includes("non") || name.includes("buxanka") || name.includes("patir")) return "https://images.pexels.com/photos/1775043/pexels-photo-1775043.jpeg?auto=compress&cs=tinysrgb&w=350";
+            if (name.includes("pechenye") || name.includes("kroki") || name.includes("chips")) return "https://images.pexels.com/photos/230325/pexels-photo-230325.jpeg?auto=compress&cs=tinysrgb&w=350";
+
+            // Shakar, Novvot, Shirinliklar
+            if (name.includes("shakar")) return "https://images.pexels.com/photos/6697330/pexels-photo-6697330.jpeg?auto=compress&cs=tinysrgb&w=350";
+            if (name.includes("novvot") || name.includes("konfet") || name.includes("shirinlik")) return "https://images.pexels.com/photos/1906435/pexels-photo-1906435.jpeg?auto=compress&cs=tinysrgb&w=350";
+
+            // Yuvish vositalari & Gigiyena
+            if (name.includes("azelit") || name.includes("sprey") || name.includes("yuvish") || name.includes("sovun")) return "https://images.pexels.com/photos/4239013/pexels-photo-4239013.jpeg?auto=compress&cs=tinysrgb&w=350";
+            if (name.includes("tish") || name.includes("colgate")) return "https://images.pexels.com/photos/4465124/pexels-photo-4465124.jpeg?auto=compress&cs=tinysrgb&w=350";
+
+            // Go'sht & Ichimliklar
+            if (name.includes("kolbasa") || name.includes("sosiska") || name.includes("go'sht")) return "https://images.pexels.com/photos/4110256/pexels-photo-4110256.jpeg?auto=compress&cs=tinysrgb&w=350";
+            if (name.includes("choy") || name.includes("cola") || name.includes("suv") || name.includes("fuse")) return "https://images.pexels.com/photos/50593/coca-cola-cold-drink-soft-drink-coke-50593.jpeg?auto=compress&cs=tinysrgb&w=350";
+
+            return "https://images.pexels.com/photos/264636/pexels-photo-264636.jpeg?auto=compress&cs=tinysrgb&w=350";
+        };
+
+        function App() {
+            const [products, setProducts] = useState([]);
+            const [activeUser, setActiveUser] = useState(null);
+            const [selectedCat, setSelectedCat] = useState("all");
+            
+            const [authModal, setAuthModal] = useState(false);
+            const [contactModal, setContactModal] = useState(false);
+
+            const [phone, setPhone] = useState("+998");
+            const [pin, setPin] = useState(["", "", "", ""]);
+            const [userName, setUserName] = useState("");
+            const [isRegisterMode, setIsRegisterMode] = useState(false);
+            const [authError, setAuthError] = useState("");
+
+            const pinRefs = [useRef(), useRef(), useRef(), useRef()];
+
+            useEffect(() => {
+                db.ref('products').on('value', snap => {
+                    const data = snap.val();
+                    if (data) {
+                        setProducts(Object.keys(data).map(k => ({ ...data[k], key: k })));
+                    }
+                });
+            }, []);
+
+            useEffect(() => {
+                if (activeUser && activeUser.phone) {
+                    db.ref('clients/' + activeUser.phone).on('value', snap => {
+                        const data = snap.val();
+                        if (data) {
+                            setActiveUser(prev => Object.assign({}, prev, data));
+                        }
+                    });
+                }
+            }, [activeUser && activeUser.phone]);
+
+            const handlePinChange = (index, value) => {
+                if (value.length > 1) return;
+                const newPin = [...pin];
+                newPin[index] = value;
+                setPin(newPin);
+                if (value && index < 3) pinRefs[index + 1].current.focus();
+            };
+
+            const handleAuth = () => {
+                setAuthError("");
+                const cleanPhone = phone.replace(/\s+/g, '');
+                const cleanPin = pin.join("");
+
+                if (cleanPin.length !== 4) {
+                    setAuthError("4 xonali PIN kodni to'liq kiriting!");
+                    return;
+                }
+
+                db.ref('clients/' + cleanPhone).once('value', snap => {
+                    const client = snap.val();
+                    if (client) {
+                        if (client.pin === cleanPin) {
+                            setActiveUser(Object.assign({ phone: cleanPhone }, client));
+                            setAuthModal(false);
+                            resetForm();
+                        } else {
+                            setAuthError("PIN kod noto'g'ri!");
+                        }
+                    } else {
+                        if (!isRegisterMode) {
+                            setIsRegisterMode(true);
+                            setAuthError("Raqam topilmadi. Ismingizni yozib ro'yxatdan o'ting.");
+                            return;
+                        }
+                        if (!userName.trim()) {
+                            setAuthError("Ismingizni kiriting!");
+                            return;
+                        }
+
+                        const newUser = {
+                            ism: userName.trim(),
+                            pin: cleanPin,
+                            qarz: 0,
+                            limit: 100000,
+                            oxirgiSana: "Yangi ro'yxatdan o'tildi",
+                            oxirgiXarid: "Hozircha xaridlar yo'q"
+                        };
+
+                        db.ref('clients/' + cleanPhone).set(newUser);
+                        setActiveUser(Object.assign({ phone: cleanPhone }, newUser));
+                        setAuthModal(false);
+                        resetForm();
+                    }
+                });
+            };
+
+            const resetForm = () => {
+                setPhone("+998");
+                setPin(["", "", "", ""]);
+                setUserName("");
+                setIsRegisterMode(false);
+                setAuthError("");
+            };
+
+            const filteredList = selectedCat === "all" ? products : products.filter(p => p.kat === selectedCat);
+
+            return (
+                <div className="min-h-screen flex flex-col bg-blueCore-deep text-slate-100">
+                    
+                    {/* 1. HEADER */}
+                    <header className="bg-blueCore-card/95 backdrop-blur-md border-b border-blueCore-border sticky top-0 z-50">
+                        <div className="max-w-7xl mx-auto px-4 md:px-8 py-3.5 flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-3 cursor-pointer shrink-0" onClick={() => window.scrollTo({top:0, behavior:'smooth'})}>
+                                <div className="w-10 h-10 rounded-2xl bg-blueCore-primary flex items-center justify-center text-white font-extrabold text-xl shadow-lg shadow-blue-600/40">
+                                    ✦
+                                </div>
+                                <div>
+                                    <span className="text-2xl font-black italic tracking-tighter text-white">
+                                        mahalla<span className="text-blueCore-light">.market</span>
+                                    </span>
+                                    <div className="text-[9px] font-extrabold uppercase tracking-widest text-blueCore-light -mt-1">
+                                        yangi zamon
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-3 shrink-0">
+                                <button 
+                                    onClick={() => setContactModal(true)}
+                                    className="bg-blueCore-card hover:bg-blueCore-primary border border-blueCore-border text-blueCore-light hover:text-white px-4 py-2 rounded-full text-xs font-bold transition shadow-sm"
+                                >
+                                    💬 Aloqa
+                                </button>
+
+                                {activeUser ? (
+                                    <button 
+                                        onClick={() => setActiveUser(null)}
+                                        className="flex items-center gap-2 bg-blueCore-primary text-white px-5 py-2 rounded-full text-xs font-bold shadow-lg shadow-blue-600/30 hover:bg-blueCore-hover transition"
+                                    >
+                                        <span>👤 {activeUser.ism}</span>
+                                        <span className="text-sky-200 font-extrabold">(Chiqish)</span>
+                                    </button>
+                                ) : (
+                                    <button 
+                                        onClick={() => setAuthModal(true)}
+                                        className="flex items-center gap-2 bg-gradient-to-r from-blueCore-primary to-blueCore-light text-white px-5 py-2 rounded-full text-xs font-extrabold hover:opacity-95 transition shadow-lg shadow-blue-500/25"
+                                    >
+                                        <span>👤 Kirish</span>
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* 2. SHAXSIY KABINET */}
+                    {activeUser && (
+                        <div className="max-w-7xl mx-auto px-4 md:px-8 mt-6 w-full">
+                            <div className="bg-blueCore-card border border-blueCore-border rounded-3xl p-6 shadow-xl grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                                <div>
+                                    <span className="bg-blueCore-primary/30 border border-blueCore-light/40 text-blueCore-light text-[11px] font-black px-3 py-1 rounded-full uppercase">
+                                        Mijoz Shaxsiy Profili
+                                    </span>
+                                    <h3 className="text-2xl font-black text-white mt-2">{activeUser.ism}</h3>
+                                    <p className="text-slate-400 text-xs font-bold">{activeUser.phone}</p>
+                                </div>
+
+                                <div className="bg-blueCore-deep border border-blueCore-border p-4 rounded-2xl">
+                                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Joriy Nasiya Qarzi</span>
+                                    <div className="text-2xl font-black text-blueCore-light mt-0.5">
+                                        {Number(activeUser.qarz || 0).toLocaleString()} so'm
+                                    </div>
+                                </div>
+
+                                <div className="bg-blueCore-primary/10 border border-blueCore-primary/30 p-4 rounded-2xl">
+                                    <span className="text-[11px] font-bold text-blueCore-light uppercase tracking-wider">Oxirgi Xarid ({activeUser.oxirgiSana || "Yangi"})</span>
+                                    <div className="text-xs text-slate-200 mt-1.5 font-bold">
+                                        {activeUser.oxirgiXarid || "Hozircha xaridlar yo'q"}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 3. KATALOG & TOVARLAR */}
+                    <main className="max-w-7xl mx-auto px-4 md:px-8 mt-8 mb-20 w-full flex-1">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-2xl font-black tracking-tight text-white">Do'kondagi Tovarlar</h2>
+                            <span className="text-xs font-bold text-blueCore-light">Jami: {filteredList.length} ta mahsulot</span>
+                        </div>
+
+                        {/* Filtr tugmalari */}
+                        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-3 mb-6">
+                            {[
+                                { id: "all", label: "Barchasi" },
+                                { id: "non", label: "🍞 Non va Pishiriq" },
+                                { id: "sabzavot", label: "🍎 Meva & Sabzavot" },
+                                { id: "qandolat", label: "🍬 Qandolat & Shakar" },
+                                { id: "gigiyena", label: "🧼 Yuvish vositalari" },
+                                { id: "muzlatgich", label: "🥩 Go'sht & Muzlatgich" }
+                            ].map(tab => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setSelectedCat(tab.id)}
+                                    className={`px-5 py-2.5 rounded-full text-xs font-bold transition whitespace-nowrap ${
+                                        selectedCat === tab.id 
+                                        ? "bg-blueCore-primary text-white shadow-lg shadow-blue-600/30" 
+                                        : "bg-blueCore-card text-slate-400 border border-blueCore-border hover:bg-blueCore-card/80 hover:text-white"
+                                    }`}
+                                >
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* KORZINKA USLUBIDAGI OQ KARTALAR */}
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4 md:gap-6">
+                            {filteredList.map(item => {
+                                const eskiNarx = Math.round(item.sotish * 1.15);
+                                return (
+                                    <div 
+                                        key={item.key} 
+                                        className="korzinka-card p-4 flex flex-col justify-between relative overflow-hidden shadow-lg"
+                                    >
+                                        <div>
+                                            {/* Sana nishoni */}
+                                            <div className="inline-block bg-sky-100 text-blue-700 text-[10px] font-extrabold px-3 py-1 rounded-full mb-2">
+                                                20.08.2026-26.08.2026
+                                            </div>
+
+                                            {/* SIFATLI RASM KONTEYNERI */}
+                                            <div className="w-full h-44 rounded-2xl overflow-hidden relative my-2 bg-slate-100 flex items-center justify-center">
+                                                <img 
+                                                    src={item.img || getReliableImage(item.nom, item.kat)} 
+                                                    alt={item.nom}
+                                                    className="w-full h-full object-cover hover:scale-105 transition duration-300"
+                                                    loading="lazy"
+                                                />
+
+                                                {/* KORZINKA SARIQ NARX DOIRASI */}
+                                                <div className="yellow-price-badge absolute bottom-2 right-2 w-16 h-16 rounded-full flex flex-col items-center justify-center text-center p-1 font-black leading-none">
+                                                    <span className="text-[9px] text-slate-600 line-through font-semibold">{eskiNarx.toLocaleString()}</span>
+                                                    <span className="text-xs font-black text-slate-900 mt-0.5">{Number(item.sotish || 0).toLocaleString()}</span>
+                                                    <span className="text-[8px] bg-rose-600 text-white font-extrabold px-1 rounded-sm mt-0.5">-15%</span>
+                                                </div>
+                                            </div>
+
+                                            {/* NOMI VA VAZNI */}
+                                            <h3 className="font-extrabold text-slate-900 text-sm leading-snug line-clamp-2 mt-3">
+                                                {item.nom}
+                                            </h3>
+                                            <p className="text-xs font-bold text-slate-500 mt-1">
+                                                1 {item.birlik}
+                                            </p>
+                                        </div>
+
+                                        {/* KO'ZGA YAQQOL TASHLANUVCHI KO'K TUGMA */}
+                                        <div className="mt-4 pt-2">
+                                            <button 
+                                                onClick={() => setContactModal(true)}
+                                                className="w-full bg-blueCore-primary hover:bg-blueCore-hover text-white font-extrabold py-3 rounded-2xl text-xs transition text-center shadow-md shadow-blue-600/30 flex items-center justify-center gap-2"
+                                            >
+                                                <span>🛒</span>
+                                                <span>Sotib olish</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </main>
+
+                    {/* ALOQA MODALI */}
+                    {contactModal && (
+                        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+                            <div className="bg-blueCore-card border border-blueCore-border rounded-4xl max-w-sm w-full p-7 shadow-2xl relative text-center">
+                                <button onClick={() => setContactModal(false)} className="absolute top-5 right-5 text-slate-400 hover:text-white font-bold">✕</button>
+                                <div className="w-14 h-14 bg-blueCore-primary/20 text-blueCore-light border border-blueCore-light/30 rounded-2xl flex items-center justify-center text-2xl font-bold mx-auto mb-3">📞</div>
+                                <h3 className="text-xl font-black text-white mb-1">Do'kon Ma'muriyati</h3>
+                                <p className="text-xs font-semibold text-slate-400 mb-6">Savollar yoki buyurtmalar bo'yicha to'g'ridan-to'g'ri bog'laning</p>
+                                <div className="space-y-3">
+                                    <a href="https://t.me/mahallamarketadmin1" target="_blank" className="flex items-center justify-center gap-3 w-full bg-blueCore-primary hover:bg-blueCore-hover text-white font-bold py-3.5 rounded-2xl text-xs transition shadow-lg shadow-blue-600/30">
+                                        <span>✈️ Telegram: @mahallamarketadmin1</span>
+                                    </a>
+                                    <a href="tel:+998950484741" className="flex items-center justify-center gap-3 w-full bg-blueCore-deep border border-blueCore-border hover:border-blueCore-light text-blueCore-light font-bold py-3.5 rounded-2xl text-xs transition">
+                                        <span>📞 Tel: +998 95 048 47 41</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* AUTH MODAL */}
+                    {authModal && (
+                        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+                            <div className="bg-blueCore-card border border-blueCore-border rounded-4xl max-w-sm w-full p-7 shadow-2xl relative text-center">
+                                <button onClick={() => { setAuthModal(false); resetForm(); }} className="absolute top-5 right-5 text-slate-400 hover:text-white font-bold">✕</button>
+                                <div className="w-12 h-12 bg-blueCore-primary/20 text-blueCore-light border border-blueCore-light/30 rounded-2xl flex items-center justify-center text-xl font-bold mx-auto mb-3">✦</div>
+                                <h3 className="text-xl font-black text-white mb-1">{isRegisterMode ? "Yangi Profil Yaratish" : "Kabinetga Kirish"}</h3>
+                                <p className="text-xs font-semibold text-slate-400 mb-5">{isRegisterMode ? "Ismingiz va 4 xonali PIN kodni belgilang" : "Telefon va 4 xonali PIN kodingizni kiriting"}</p>
+
+                                {isRegisterMode && (
+                                    <div className="text-left mb-3">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase">Ismingiz</label>
+                                        <input type="text" value={userName} onChange={(e) => setUserName(e.target.value)} placeholder="Ismingizni kiriting" className="w-full mt-1 bg-blueCore-deep border border-blueCore-border focus:border-blueCore-light p-3 rounded-2xl text-xs font-bold text-white outline-none" />
+                                    </div>
+                                )}
+
+                                <div className="text-left mb-3">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase">Telefon Raqam</label>
+                                    <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+998 90 123 45 67" className="w-full mt-1 bg-blueCore-deep border border-blueCore-border focus:border-blueCore-light p-3 rounded-2xl text-xs font-bold text-white outline-none" />
+                                </div>
+
+                                <div className="text-left mb-4">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase">4 Xonali PIN Kod</label>
+                                    <div className="flex justify-between gap-2 mt-1">
+                                        {pin.map((val, idx) => (
+                                            <input key={idx} ref={pinRefs[idx]} type="password" maxLength="1" value={val} onChange={(e) => handlePinChange(idx, e.target.value)} className="w-12 h-12 bg-blueCore-deep border-2 border-blueCore-border focus:border-blueCore-light text-center text-lg font-black text-white rounded-2xl outline-none transition" />
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {authError && (
+                                    <div className="text-rose-400 text-xs font-bold mb-3 bg-rose-950/40 border border-rose-900/50 py-2 rounded-xl">{authError}</div>
+                                )}
+
+                                <button onClick={handleAuth} className="w-full bg-blueCore-primary hover:bg-blueCore-hover text-white font-extrabold py-3.5 rounded-2xl text-xs shadow-lg shadow-blue-600/30 transition">
+                                    {isRegisterMode ? "Ro'yxatdan O'tish" : "Kabinetni Ochish"}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById("root"));
+        root.render(<App />);
+    </script>
+</body>
+</html>
